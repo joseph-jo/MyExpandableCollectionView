@@ -11,10 +11,18 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-let itemsInSection = [1, 3, 5, 7, 9, 2, 4, 6, 8, 10]
+protocol MyExpandableCollectionViewDataSource: NSObjectProtocol {
+    
+    func numberOfSections() -> Int
+    func numberOfItemsInSection(section: Int) -> Int
+}
  
 class MyExpandableCollectionView: UIView, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     
+    // Data
+    weak var dataSource: MyExpandableCollectionViewDataSource?
+    
+    // UI
     internal let layout = UICollectionViewFlowLayout()
     internal var collectionView: UICollectionView!
     
@@ -33,15 +41,16 @@ class MyExpandableCollectionView: UIView, UICollectionViewDataSource, UICollecti
         super.init(frame: frame)
     }
     
-    override func layoutSubviews() {
-        self.layoutMe()
-    }
-        
-    convenience init() {
+    convenience init(dataSource: MyExpandableCollectionViewDataSource) {
         self.init(frame: .zero)
-          
+        
+        self.dataSource = dataSource
         self.initUI()
         self.initRx()
+    }
+    
+    override func layoutSubviews() {
+        self.layoutMe()
     }
     
     func initUI() {
@@ -82,7 +91,7 @@ class MyExpandableCollectionView: UIView, UICollectionViewDataSource, UICollecti
     func initRx() {
         
         packTapPublishSub.subscribe { val in
-            print(val)
+            
             self.handleCategoryCellExpandCollapse(packIndex: val)
         } onError: { err in
             
@@ -98,13 +107,16 @@ class MyExpandableCollectionView: UIView, UICollectionViewDataSource, UICollecti
 extension MyExpandableCollectionView {
      
     internal func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return itemsInSection.count
+        guard let dataSource = self.dataSource else { return 0 }
+        return dataSource.numberOfSections()
     }
     
     internal func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-                        
+        
+        guard let dataSource = self.dataSource else { return 0 }
+        
         if section == self.focusedPackIndex {
-            return itemsInSection[section]
+            return dataSource.numberOfItemsInSection(section: section)
         }
         return 0
     }
@@ -208,7 +220,7 @@ extension MyExpandableCollectionView {
             headerView.btn.setTitle("H\(indexPath.section)", for: .normal)
             headerView.btn.rx.tap
                 .subscribe(onNext: { [weak self] in
-                    print("tapped")
+                    
                     self?.packTapPublishSub.onNext(indexPath.section)
                 })
                 .disposed(by: headerView.disposeBag)
