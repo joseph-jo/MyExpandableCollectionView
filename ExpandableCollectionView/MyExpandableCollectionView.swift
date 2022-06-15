@@ -73,7 +73,6 @@ class MyExpandableCollectionView: UIView, UICollectionViewDataSource, UICollecti
             make.height.equalTo(80)
         }
         
-        self.collectionView.layoutIfNeeded()
         layout.itemSize = CGSize(width: 65, height: 80)
         layout.headerReferenceSize = CGSize(width: 65, height: 80)
         layout.footerReferenceSize = CGSize(
@@ -122,27 +121,30 @@ extension MyExpandableCollectionView {
 extension MyExpandableCollectionView {
     
     internal func handleCategoryCellExpandCollapse(packIndex: Int, reloadData: Bool = true) {
+                    
+        var deleteItemSection = -1
+        var addItemSection = -1
         
+        // Collapse prev.
+        if self.focusedPackIndex != -1 {
+            deleteItemSection = self.focusedPackIndex
+        }
+         
+        // Collapse
+        if packIndex == self.focusedPackIndex {
+            self.focusedPackIndex = -1
+        }
+        // Expand
+        else {
+            self.focusedPackIndex = packIndex
+            addItemSection = packIndex
+        }
+        
+        // Header/Footer reload
+        self.collectionView.collectionViewLayout.invalidateLayout()
+        
+        // Animation
         self.collectionView.performBatchUpdates {
-            
-            var deleteItemSection = -1
-            var addItemSection = -1
-            
-            // Collapse prev.
-            if self.focusedPackIndex != -1 {
-                deleteItemSection = self.focusedPackIndex
-            }
-             
-            // Collapse
-            if packIndex == self.focusedPackIndex {
-                self.focusedPackIndex = -1
-            }
-            // Expand
-            else {
-
-                self.focusedPackIndex = packIndex
-                addItemSection = packIndex
-            }
             
             if deleteItemSection != -1 {
                 let items = itemsInSection[deleteItemSection]
@@ -167,6 +169,7 @@ extension MyExpandableCollectionView {
  
                 self.collectionView.setContentOffset(CGPoint(x: headerAttributes.frame.origin.x, y: 0), animated: true);
 //                self.collectionView.scrollToItem(at: scrollToIndexPath, at: .left, animated: true)
+                
             }
         }
     }
@@ -183,7 +186,12 @@ extension MyExpandableCollectionView {
                           layout collectionViewLayout: UICollectionViewLayout,
                           referenceSizeForFooterInSection section: Int) -> CGSize {
         
-        return CGSize(width: 15, height: self.bounds.height)
+        if section == self.focusedPackIndex {
+            return CGSize(width: 15, height: self.bounds.height)
+        }
+        else {
+            return .zero
+        }
     }
     
     internal func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
@@ -209,28 +217,20 @@ extension MyExpandableCollectionView {
         }
         else if kind == UICollectionView.elementKindSectionFooter {
             
-            var reusableView = UICollectionReusableView()
-            reusableView =
+            let footerView =
                 collectionView.dequeueReusableSupplementaryView(
                     ofKind: UICollectionView.elementKindSectionFooter,
                     withReuseIdentifier: "Footer",
-                    for: indexPath)
-            
-            return reusableView
+                    for: indexPath) as! MyExpandableCollectionFooterView
+                         
+            return footerView
         }
         
         return UICollectionReusableView()
     }
-    
-    private func isPackExpandable(sectionIndex: Int) -> Bool {
-        
-        return (self.collectionView(self.collectionView, numberOfItemsInSection: sectionIndex) > 1)
-    }
-    
 }
 
-     
-    
+         
     
     
      
@@ -293,7 +293,7 @@ class MyExpandableCollectionHeaderView: UICollectionReusableView {
 // MARK: - Footer view
 class MyExpandableCollectionFooterView: UICollectionReusableView {
         
-    var separatorView: UILabel?
+    var separatorView = UILabel()
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
@@ -301,17 +301,15 @@ class MyExpandableCollectionFooterView: UICollectionReusableView {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-         
-        self.separatorView = UILabel()
-        self.separatorView?.text = "F"
-        self.separatorView?.textColor = .white
-        if let separatorView = self.separatorView {
-            separatorView.frame = self.bounds
-            self.addSubview(separatorView)
-        }
+          
+        self.separatorView.text = "F"
+        self.separatorView.textColor = .white
+        self.separatorView.frame = self.bounds
+        self.addSubview(separatorView)
         
         self.backgroundColor = .blue
     }
+    
 }
 
 
