@@ -13,8 +13,10 @@ class ViewController: UIViewController, MyExpandableCollectionViewDataSource {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        let view = MyExpandableCollectionView.init(dataSource: self)
+         
+        let view = MyExpandableCollectionView.init(dataSource: self,
+                                                    itemCellClass: MyExpandableCollectionViewCell.self,
+                                                    headerClass: MyExpandableCollectionHeaderView.self)
         self.view.addSubview(view)
         
         view.snp.makeConstraints {
@@ -35,5 +37,14 @@ extension ViewController {
     func numberOfItemsInSection(section: Int) -> Int {
         return itemsInSection[section]
     }
+    
+    func updateCell(indexPath: IndexPath, cell: MyExpandableCollectionViewCell) {
+        cell.contentView.backgroundColor = .red
+    }
+    
+    func updateHeader(indexPath: IndexPath, headerView: MyExpandableCollectionHeaderView) {
+        headerView.backgroundColor = .orange
+    }
+    
 }
 
